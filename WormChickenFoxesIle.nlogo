@@ -1,9 +1,194 @@
+breed [ worms worm ]
+breed [ chickens chicken ]
+breed [ foxes fox ]
 
+foxes-own [ life-expectancy satiety lifetime-passed]
+chickens-own [ life-expectancy ]
+worms-own [ life-expectancy ]
+
+globals[
+  is-winter
+  chicken-timer
+]
+
+to setup
+  clear-all
+
+  create-worms  1000
+  [
+    set shape "worm"
+    set size 2
+    setxy random-xcor random-ycor
+    set life-expectancy 1460
+  ]
+
+  create-chickens nbInitial_poulet
+  [
+    set shape "chicken"
+    set size 2
+    set life-expectancy 5
+    setxy random-xcor random-ycor
+  ]
+
+  create-foxes nbInitial_renard
+  [
+    set shape "fox"
+    set color orange
+    set size 2
+    set life-expectancy 5
+    set satiety 0
+    set lifetime-passed 0
+    setxy random-xcor random-ycor
+  ]
+
+  reset-ticks; reinitialise le compteur des ticks
+end
+
+to go
+  if not any? turtles [ stop ]
+
+  ifelse nbReproductionRenard = 1 [
+    ifelse ticks mod 364 = 274 [
+      set is-winter 1
+    ] [
+      set is-winter 0
+    ]
+  ][
+    ifelse ticks mod 364 = 274 or ticks mod 364 = 92 [
+      set is-winter 1
+    ] [
+      set is-winter 0
+    ]
+  ]
+
+  ifelse ticks mod 21 = 0 [
+    set chicken-timer 1
+  ][
+    set chicken-timer 0
+  ]
+
+
+
+  ask worms [
+    move
+    reproduce-worms
+    set life-expectancy life-expectancy - 1
+  ]
+
+  ask foxes [
+    move-foxes
+    set life-expectancy life-expectancy - 1
+    eat-chickens
+    death-foxes
+    reproduce-foxes
+  ]
+
+  ask chickens[
+    move
+    set life-expectancy life-expectancy - 1
+    eat-worms
+    death
+    reproduce-chickens
+  ]
+
+  tick
+end
+
+
+
+
+to eat-chickens
+  ifelse satiety > 0
+    [
+      set satiety satiety - 1
+    ]
+    [
+      let number-to-eat min list (random 3) count chickens
+      let prey n-of number-to-eat chickens
+      if prey != nobody [
+        ask prey [ die ]
+        set satiety 4
+        set life-expectancy life-expectancy + 5
+        set lifetime-passed lifetime-passed + 5
+      ]
+    ]
+
+end
+
+to eat-worms
+  let prey one-of worms-here
+  if prey != nobody [
+    ask prey [die]
+    set life-expectancy life-expectancy + 2
+  ]
+end
+
+
+
+
+to reproduce-foxes
+  if count foxes < 1000 [
+    if is-winter = 1 [
+      let num-babies 1 + random 11
+      hatch num-babies [
+       rt random-float 360 fd 1
+       set lifetime-passed 0
+       set life-expectancy 4
+      ]
+  ]
+]
+
+end
+
+to reproduce-chickens
+  if count chickens < 2000 [
+    if chicken-timer = 1 [
+      hatch random 2 [ rt random-float 360 fd 1 ]
+    ]
+  ]
+end
+
+to reproduce-worms
+  if count worms < 1000 [
+    let worms-needed (1000 - count worms)
+    let num-babies random 3
+    if num-babies > worms-needed [
+      set num-babies worms-needed
+    ]
+    hatch num-babies [ rt random-float 360 fd 1
+    ]
+  ]
+end
+
+
+to death
+  if life-expectancy <= 0  [
+    die
+  ]
+end
+
+to death-foxes
+  if life-expectancy < 0 or lifetime-passed > 730[
+    die
+  ]
+end
+
+to move-foxes
+  rt random 50
+  lt random 50
+  fd 3
+end
+
+to move
+  rt random 50
+  lt random 50
+  fd 1
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+799
 10
-647
+1236
 448
 -1
 -1
@@ -21,11 +206,132 @@ GRAPHICS-WINDOW
 16
 -16
 16
-0
-0
+1
+1
 1
 ticks
 30.0
+
+BUTTON
+439
+18
+520
+51
+NIL
+setup
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+266
+69
+438
+102
+nbInitial_renard
+nbInitial_renard
+2
+10
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+437
+69
+609
+102
+nbInitial_poulet
+nbInitial_poulet
+1
+500
+322.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+546
+18
+609
+51
+NIL
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
+PLOT
+263
+272
+712
+603
+Populations
+time
+pop.
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"Renard" 1.0 0 -2674135 true "" "plot count foxes"
+"Poules" 1.0 0 -13840069 true "" "plot count chickens"
+"Ver de terre" 1.0 0 -10402772 true "" "plot count worms"
+
+MONITOR
+304
+213
+407
+258
+foxes
+count foxes
+17
+1
+11
+
+MONITOR
+551
+214
+611
+259
+chickens
+count chickens
+17
+1
+11
+
+SLIDER
+608
+69
+780
+102
+nbReproductionRenard
+nbReproductionRenard
+1
+2
+1.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -120,6 +426,23 @@ Polygon -16777216 true false 162 80 132 78 134 135 209 135 194 105 189 96 180 89
 Circle -7500403 true true 47 195 58
 Circle -7500403 true true 195 195 58
 
+chicken
+true
+0
+Rectangle -1 true false 180 105 195 105
+Polygon -6459832 false false 105 195 105 210 120 225 105 210 105 225 105 210 90 225 105 210 105 195
+Rectangle -955883 true false 90 120 210 195
+Polygon -6459832 false false 150 195 150 210 165 225 150 210 150 225 150 210 135 225 150 210 150 195
+Circle -955883 true false 159 129 42
+Rectangle -2674135 true false 150 75 165 105
+Rectangle -2674135 true false 165 75 180 90
+Rectangle -1 true false 210 105 225 120
+Rectangle -1184463 true false 210 105 225 120
+Rectangle -1 true false 180 105 195 120
+Rectangle -955883 true false 165 90 180 120
+Rectangle -955883 true false 180 90 210 105
+Rectangle -955883 true false 195 105 210 120
+
 circle
 false
 0
@@ -205,6 +528,38 @@ Circle -7500403 true true 96 51 108
 Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
+
+fox
+true
+0
+Rectangle -955883 true false 120 150 165 165
+Rectangle -16777216 true false 165 150 180 165
+Rectangle -16777216 true false 105 150 120 165
+Rectangle -955883 true false 105 165 180 180
+Rectangle -955883 true false 180 120 195 165
+Rectangle -955883 true false 90 120 105 165
+Rectangle -955883 true false 105 120 180 150
+Rectangle -1 true false 180 105 195 120
+Rectangle -1 true false 90 105 105 120
+Rectangle -955883 true false 165 105 180 120
+Rectangle -955883 true false 180 90 195 105
+Rectangle -955883 true false 195 90 210 105
+Rectangle -955883 true false 195 105 210 150
+Rectangle -16777216 true false 195 75 210 90
+Rectangle -1 true false 195 150 210 165
+Rectangle -1 true false 180 165 195 180
+Rectangle -1 true false 165 180 180 195
+Rectangle -1 true false 150 195 165 210
+Rectangle -1 true false 120 195 135 210
+Rectangle -1 true false 105 180 120 195
+Rectangle -1 true false 90 165 105 180
+Rectangle -1 true false 75 150 90 165
+Rectangle -16777216 true false 195 75 210 90
+Rectangle -955883 true false 105 105 120 120
+Rectangle -955883 true false 75 90 105 105
+Rectangle -955883 true false 75 105 90 150
+Rectangle -16777216 true false 135 195 150 210
+Rectangle -955883 true false 120 180 165 195
 
 house
 false
@@ -362,6 +717,25 @@ false
 Polygon -16777216 true false 253 133 245 131 245 133
 Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
 Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
+
+worm
+false
+0
+Circle -6459832 true false 135 150 30
+Circle -6459832 true false 135 165 30
+Circle -6459832 true false 135 180 30
+Rectangle -6459832 true false 135 135 165 165
+Circle -6459832 true false 135 120 30
+Circle -6459832 true false 135 105 30
+Circle -6459832 true false 135 90 30
+Circle -6459832 false false 135 75 30
+Circle -6459832 true false 135 75 30
+Polygon -6459832 true false -510 390 -540 375 -540 405 -510 390 -495 405
+Rectangle -6459832 true false -105 420 -60 465
+Circle -6459832 true false 135 195 30
+Circle -6459832 true false 135 60 30
+Circle -6459832 true false 135 210 30
+Line -6459832 false 540 255 540 270
 
 x
 false

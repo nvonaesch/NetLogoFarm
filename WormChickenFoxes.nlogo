@@ -1,25 +1,28 @@
+;déclaration des breeds
 breed [ worms worm ]
 breed [ chickens chicken ]
 breed [ foxes fox ]
 
-
+;toutes les espèces possèdent de l'énergie
 foxes-own [ energy ]
 chickens-own [ energy ]
 worms-own [ energy ]
 
 
 to setup
-  clear-all
+  clear-all ;Effacer les elements
 
+  ;Crée les vers initiaux et leurs caractéristiques
   create-worms  nbInitial_ver
   [
    set shape "worm"
    set color brown
    set size 2
-   set energy 50
+   set energy 40
    setxy random-xcor random-ycor
   ]
 
+  ;Crée les poules initiales et leurs caractéristiques
   create-chickens nbInitial_poulet
   [
     set shape "chicken"
@@ -29,22 +32,26 @@ to setup
     setxy random-xcor random-ycor
   ]
 
+  ;Crée les renards initiaux et leurs caractéristiques
   create-foxes nbInitial_renard
   [
     set shape "fox"
     set color orange
     set size 2
-    set energy 10
+    set energy 20
     setxy random-xcor random-ycor
   ]
-  reset-ticks
+
+  reset-ticks; reinitialise le compteur des ticks
 end
 
 
-
+;fonction appelee lors de l'appui sur le bouton go
 to go
-  if not any? turtles [ stop ]
+  if not any? turtles [ stop ] ; si il n'y a plus d'agents alors l'on stop la simulation
 
+  ;Définition du comportement des vers qui vont bouger, perdre de l'énergie
+  ;manger si possible un cadavre de renard puis mourir si ils n'ont plus d'énergies
   ask worms [
     move
     set energy energy - 1
@@ -52,6 +59,8 @@ to go
     death
   ]
 
+  ;Définition du comportement des renards qui vont bouger, perdre de l'énergie
+  ;manger une poule, mourir si ils n'ont plus d'énergies et se reproduire selon une probabilite
   ask foxes [
     move
     set energy energy - 1
@@ -60,6 +69,8 @@ to go
     reproduce-foxes
   ]
 
+  ;Définition du comportement des poules qui vont bouger, perdre de l'énergie
+  ;manger un ver, mourir si ils n'ont plus d'énergies et se reproduire selon une probabilite
   ask chickens[
     move
     set energy energy - 1
@@ -72,7 +83,7 @@ to go
 end
 
 
-
+; Vérifie si le renard mange une poule
 to eat-chickens
   let prey one-of chickens-here
   if prey != nobody [
@@ -81,6 +92,7 @@ to eat-chickens
   ]
 end
 
+; Vérifie si la poule mange un ver
 to eat-worms
   let prey one-of worms-here
   if prey != nobody [
@@ -89,6 +101,7 @@ to eat-worms
   ]
 end
 
+;Vérifie si le ver mange un renard (si le patch est rouge)
 to eat-foxes
   if pcolor = red [
    reproduce-worms
@@ -97,49 +110,60 @@ to eat-foxes
   ]
 end
 
-
-
-
+;Reproduction des renards selon une probabilité
 to reproduce-foxes
   if random-float 100 < reproductionRenard [
-    set energy (energy / 2)
+    set energy (energy / 1.5)
     hatch 1 [ rt random-float 360 fd 1 ]
   ]
 end
 
+;Reproduction des poules selon une probabilité
 to reproduce-chickens
   if random-float 100 < reproductionPoule [
-    set energy (energy / 2)
+    set energy (energy / 1.5)
     hatch 1 [ rt random-float 360 fd 1 ]
   ]
 end
 
+;Les vers se reproduisent si ils ont mangés
 to reproduce-worms
   hatch 1 [ rt random-float 360 fd 1 ]
 end
 
 
-
+; les renards meurents s'ils n'ont plus d'énergies et ils laissent du sang que mangent les vers
 to death-foxes
   if energy < 0 [
-    ask neighbors4 [
-      set pcolor red
+    let patch-east patch-at 1 0
+    let patch-west patch-at -1 0
+
+    if patch-east != nobody [
+      ask patch-east [
+        set pcolor red
+      ]
+    ]
+    if patch-west != nobody [
+      ask patch-west [
+        ;set pcolor red
+      ]
     ]
     die
-  ]
+    ]
+
 end
 
+;Mort des poules et des vers si ils n'ont plus d'énergies
 to death
   if energy < 0 [die]
 end
 
-
+;mouvements aléatoires d'une distance de 1
 to move
   rt random 50
   lt random 50
   fd 1
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 799
@@ -194,7 +218,7 @@ nbInitial_renard
 nbInitial_renard
 1
 100
-21.0
+30.0
 1
 1
 NIL
@@ -209,7 +233,7 @@ nbInitial_poulet
 nbInitial_poulet
 1
 100
-100.0
+34.0
 1
 1
 NIL
@@ -224,7 +248,7 @@ nbInitial_ver
 nbInitial_ver
 1
 100
-100.0
+75.0
 1
 1
 NIL
@@ -249,14 +273,14 @@ NIL
 
 SLIDER
 223
-134
+110
 424
-167
+143
 energieRenardMangePoule
 energieRenardMangePoule
 1
 100
-20.0
+44.0
 1
 1
 NIL
@@ -264,14 +288,14 @@ HORIZONTAL
 
 SLIDER
 424
-134
+110
 613
-167
+143
 energieVerMangeRenard
 energieVerMangeRenard
 1
 100
-20.0
+16.0
 1
 1
 NIL
@@ -279,24 +303,24 @@ HORIZONTAL
 
 SLIDER
 613
-134
+110
 792
-167
+143
 energiePouleMangeVer
 energiePouleMangeVer
 0
 100
-20.0
+30.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-269
-200
-441
-233
+335
+151
+512
+184
 reproductionRenard
 reproductionRenard
 1
@@ -304,22 +328,22 @@ reproductionRenard
 5.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
-441
-200
-613
-233
+507
+151
+679
+184
 reproductionPoule
 reproductionPoule
 1
 100
-20.0
+12.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 PLOT
@@ -341,6 +365,39 @@ PENS
 "Renard" 1.0 0 -2674135 true "" "plot count foxes"
 "Vers" 1.0 0 -6459832 true "" "plot count worms"
 "Poules" 1.0 0 -13840069 true "" "plot count chickens"
+
+MONITOR
+304
+213
+407
+258
+foxes
+count foxes
+17
+1
+11
+
+MONITOR
+443
+213
+500
+258
+worms
+count worms
+17
+1
+11
+
+MONITOR
+551
+214
+611
+259
+chickens
+count chickens
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
